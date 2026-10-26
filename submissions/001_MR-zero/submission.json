@@ -6,14 +6,14 @@
   "tool_date": "",
   "solver": "",
   "project_page": "https://github.com/MRsources/MRzero-Core",
-  "paper": "",
+  "paper": "https://doi.org/10.48550/arXiv.2002.04265",
   "hardware": "Intel Core i7-12700K",
   "cases": [
-    {"case": 0, "runtime_s": 2.9, "mrzero_runtime_s": 2.9},
+    {"case": 0, "runtime_s": 2.8, "mrzero_runtime_s": 2.8},
     {"case": 1, "runtime_s": 24.3, "mrzero_runtime_s": 24.3},
-    {"case": 2, "runtime_s": 9.6, "mrzero_runtime_s": 9.6},
-    {"case": 3, "runtime_s": 13.3, "mrzero_runtime_s": 13.3},
-    {"case": 4, "runtime_s": 12.7, "mrzero_runtime_s": 12.7}
+    {"case": 2, "runtime_s": 9.7, "mrzero_runtime_s": 9.7},
+    {"case": 3, "runtime_s": 12.1, "mrzero_runtime_s": 12.1},
+    {"case": 4, "runtime_s": 12.3, "mrzero_runtime_s": 12.3}
   ],
   "setup_notes": "Maximum RAM usage minus baseline usage in GB: case0: 9, case1: 2, case2: 2, case3: 37, case4: 37"
 }
