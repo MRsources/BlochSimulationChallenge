@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import os
 import re
+import shutil
 import subprocess
 import sys
 import urllib.error
@@ -164,9 +165,60 @@ def ensure_faulty_branch(cwd: Path) -> None:
     _git(cwd, 'push', 'origin', f'origin/{MAIN_BRANCH}:refs/heads/{FAULTY_BRANCH}')
 
 
+def publish_faulty(base_dir: Path, pr_dir: Path, tools: list[str], number: int) -> list[str]:
+    """Copy the failed folders onto ``faulty-submissions``.
+
+    The branch is where an unevaluated submission lives. Evaluation only
+    runs on ``main``, so a folder that failed the format check is written
+    here under the same ``submissions/<tool>/`` name. A later failure of
+    the same folder replaces the copy.
+    """
+    present = [
+        name for name in tools
+        if (pr_dir / 'submissions' / name).is_dir()
+    ]
+    if not present:
+        return []
+    ensure_faulty_branch(base_dir)
+    _git(base_dir, 'fetch', 'origin', FAULTY_BRANCH)
+    _git(base_dir, 'checkout', '-B', FAULTY_BRANCH, f'origin/{FAULTY_BRANCH}')
+    written: list[str] = []
+    for name in present:
+        src = pr_dir / 'submissions' / name
+        if not src.is_dir():
+            continue
+        dest = base_dir / 'submissions' / name
+        if dest.exists():
+            shutil.rmtree(dest)
+        shutil.copytree(src, dest)
+        _git(base_dir, 'add', '-A', '--', f'submissions/{name}')
+        written.append(name)
+    if not written:
+        return []
+    status = _git(base_dir, 'status', '--porcelain')
+    if not status.stdout.strip():
+        return written
+    subprocess.run(
+        [
+            'git',
+            '-c', 'user.name=github-actions[bot]',
+            '-c', 'user.email=41898282+github-actions[bot]@users.noreply.github.com',
+            'commit', '-m', f'Keep unevaluated submission from pull request {number}',
+        ],
+        cwd=base_dir, check=True,
+    )
+    _git(base_dir, 'push', 'origin', f'HEAD:refs/heads/{FAULTY_BRANCH}')
+    return written
+
+
 def retarget(repo: str, number: int, token: str, base: str) -> None:
     """Point the pull request at ``base``. No effect when it is already there."""
     _gh(token, 'pr', 'edit', str(number), '--repo', repo, '--base', base)
+
+
+def close_pr(repo: str, number: int, token: str) -> None:
+    """Close the pull request. A corrected submission is a new pull request."""
+    _gh(token, 'pr', 'close', str(number), '--repo', repo)
 
 
 def comment_on_pr() -> None:
@@ -204,19 +256,22 @@ def comment_on_pr() -> None:
                     f'\n\nThe pull request still targets `{base}` because moving '
                     f'it to `{MAIN_BRANCH}` failed.\n\nError: {exc}'
                 )
-    elif not ok and base in {MAIN_BRANCH, 'submissions'}:
+    elif not ok:
         try:
             base_dir = Path(os.environ.get('BASE_DIR', ''))
-            ensure_faulty_branch(base_dir if base_dir.is_dir() else pr_dir)
-            retarget(repo, number, token, FAULTY_BRANCH)
+            cwd = base_dir if base_dir.is_dir() else pr_dir
+            kept = publish_faulty(cwd, pr_dir, tools, number)
+            close_pr(repo, number, token)
+            names = ', '.join(f'`submissions/{name}/`' for name in kept)
+            placed = f' {names} is on `{FAULTY_BRANCH}`.' if names else ''
             move_note = (
-                f'\n\nThis pull request was moved from `{base}` to '
-                f'`{FAULTY_BRANCH}` so it is not merged into `main`.'
+                '\n\nThis pull request is closed.'
+                f'{placed} Open a new pull request with the corrected files.'
             )
-        except (RuntimeError, OSError) as exc:
+        except (RuntimeError, OSError, subprocess.CalledProcessError) as exc:
             move_note = (
-                f'\n\nThe pull request still targets `{base}` because moving '
-                f'it to `{FAULTY_BRANCH}` failed.\n\nError: {exc}'
+                '\n\nThe pull request is still open because closing it '
+                f'failed.\n\nError: {exc}'
             )
     post_comment(repo, number, token, f'{status}\n\n{report}{id_note}{move_note}')
     print(report, flush=True)

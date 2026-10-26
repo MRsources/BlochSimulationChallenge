@@ -9,7 +9,7 @@ wall-clock into ``runtime_s`` and the time recorded here into
 
 Install::
 
-    pip install mrzerocore==1.0.8 numpy h5py
+    pip install mrzerocore==1.2.0 numpy h5py
 
 The GPU is used when one is present. Pass ``cpu`` or ``gpu`` to choose::
 

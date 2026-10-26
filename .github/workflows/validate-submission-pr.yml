@@ -3,8 +3,9 @@
 # request cannot replace them, and a later run picks up a checker that
 # landed on main after the pull request opened. A passing pull request
 # is merged into main as it stands, including one from a fork. Evaluation
-# assigns the id. A failed check is moved onto faulty-submissions so it
-# cannot land on main.
+# assigns the id. A failed check copies the unevaluated folder onto
+# faulty-submissions and closes the pull request. A corrected submission
+# is a new pull request.
 # bot/issue-* is a validated issue. Those files were already checked, so
 # this job does not check that pull request again. The owner merges it
 # into main, and evaluation runs on that push.
@@ -52,7 +53,7 @@ jobs:
       - name: Validate
         env:
           # secrets.GITHUB_TOKEN is automatic. It is not a personal access token.
-          # gh reads GH_TOKEN when a failed check is moved to faulty-submissions.
+          # gh reads GH_TOKEN when a failed check is closed.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
