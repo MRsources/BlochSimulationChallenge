@@ -1,0 +1,19 @@
+{
+  "group": "zMRI Lab (Prof. Zaiss)",
+  "tool_name": "MR-zero",
+  "tool_version": "1.0.8",
+  "tool_commit": "",
+  "tool_date": "",
+  "solver": "",
+  "project_page": "https://github.com/MRsources/MRzero-Core",
+  "paper": "",
+  "hardware": "Intel Core i7-12700K",
+  "cases": [
+    {"case": 0, "runtime_s": 3.5, "mrzero_runtime_s": 3.5},
+    {"case": 1, "runtime_s": 25, "mrzero_runtime_s": 25},
+    {"case": 2, "runtime_s": 10.8, "mrzero_runtime_s": 10.8},
+    {"case": 3, "runtime_s": 13.1, "mrzero_runtime_s": 13.1},
+    {"case": 4, "runtime_s": 13.5, "mrzero_runtime_s": 13.5}
+  ],
+  "setup_notes": "Maximum RAM usage minus baseline usage in GB: case0: 9, case1: 2, case2: 2, case3: 37, case4: 37"
+}
