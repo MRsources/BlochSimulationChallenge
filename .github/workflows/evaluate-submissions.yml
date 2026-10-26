@@ -1,0 +1,83 @@
+# Runs after a push to main changes submissions/. The job continues when
+# a changed path sits in a submission folder. Its first action gives an
+# id to a folder that arrived without one. It then runs the evaluation
+# scripts: the submission README and the image grids.
+# The commit pushes the renamed folders, evaluation/, and those READMEs.
+# A generated submissions/<id>/README.md does not start this workflow
+# again, and neither does the commit this job itself pushes.
+name: Update submission evaluation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'submissions/**'
+      - '!submissions/*/README.md'
+      - '!submissions/*/readme.md'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: submission-evaluation
+  cancel-in-progress: false
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 2
+      - name: Require a change inside a submission folder
+        id: gate
+        env:
+          ACTOR: ${{ github.actor }}
+        run: |
+          if [ "$ACTOR" = "github-actions[bot]" ]; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          before="${{ github.event.before }}"
+          if [ "$before" = "0000000000000000000000000000000000000000" ]; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git cat-file -e "$before^{commit}" 2>/dev/null || git fetch --depth=1 origin "$before"
+          changed="$(git diff --name-only "$before" HEAD -- submissions | grep -Eiv '/readme\.md$' || true)"
+          printf '%s\n' "$changed"
+          if printf '%s\n' "$changed" | grep -Eq '^submissions/[^/]+/'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.run == 'true'
+        with:
+          python-version: '3.12'
+      - name: Install evaluation dependencies
+        if: steps.gate.outputs.run == 'true'
+        run: python -m pip install numpy h5py matplotlib pypulseq==1.5.0.post1 'mri-nufft[finufft]==1.5.1'
+      - name: Assign an id to a folder that has none
+        if: steps.gate.outputs.run == 'true'
+        run: python .github/scripts/assign_submission_ids.py
+      - name: Rebuild plots
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          python evaluation/eval_scripts/write_submission_readmes.py
+          python evaluation/eval_scripts/plot_submission_images.py
+      - name: Commit evaluation
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          git add evaluation
+          git add -A -- submissions
+          if git diff --cached --quiet; then
+            echo "evaluation unchanged"
+            exit 0
+          fi
+          git -c user.name='github-actions[bot]' \
+              -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+              commit -m "Update submission evaluation"
+          git push

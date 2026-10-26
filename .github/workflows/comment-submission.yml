@@ -1,0 +1,50 @@
+# Runs in this repo when an issue is opened or its body is edited.
+# The checker scripts are the tip of main, the same source the pull
+# request check uses. A later run picks up a checker that landed on
+# main after the issue was opened.
+# A passing check pushes bot/issue-<number> and opens a pull request
+# into main. That pull request is not checked again. The owner merges
+# it by hand. Evaluation assigns the id and runs once on that push.
+
+name: Comment on submission issue
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: comment-submission-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout the trusted scripts
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install validator dependencies
+        run: python -m pip install numpy h5py
+      - name: Download attachments, validate, comment
+        env:
+          # secrets.GITHUB_TOKEN is automatic. It is not listed under
+          # Settings → Secrets, and it is not a personal access token.
+          # ATTACHMENT_TOKEN is a classic personal access token with the
+          # repo scope. The job token cannot download a private-repo zip.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ATTACHMENT_TOKEN: ${{ secrets.ATTACHMENT_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: python .github/scripts/comment_on_issue.py
