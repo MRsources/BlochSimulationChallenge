@@ -6,3 +6,7 @@
 - Version: 1.1.2
 - Project page: https://github.com/MRsources/MRzero-Core
 - Hardware: Intel Core i9-10940X
+
+## Paper
+
+https://arxiv.org/pdf/2606.15164
