@@ -74,8 +74,9 @@ def submission_dirs(root: Path) -> list[Path]:
 def plan_new_ids(folders: list[Path], reserved: list[str]) -> list[tuple[str, str]]:
     """Ids for folders that arrived without one.
 
-    ``reserved`` counts numbers already published on ``main`` or on the
-    ``submissions`` branch, so those ids are not given out again. A folder
+    ``reserved`` counts numbers already published on ``main``, on
+    ``eval``, or on the ``submissions`` branch, so those ids are not
+    given out again. A folder
     that already has an id is left as it is. The open ``bot/issue-<number>``
     branch has no id yet, so it does not reserve a number.
     """
@@ -197,15 +198,15 @@ def remote_folders(cwd: Path, branch: str = 'submissions') -> list[str]:
 
 
 def id_sources(cwd: Path) -> list[str]:
-    """Folders already published on ``main`` or staged on ``submissions``.
+    """Folders already published on ``main``, ``eval``, or ``submissions``.
 
-    Pull requests and issue submissions land on ``main``. A leftover
-    ``submissions`` branch still counts, so an id that was staged there
-    is not given out again.
+    Pull requests and issue submissions land on ``main``. Evaluation
+    assigns the id on ``eval``. A leftover ``submissions`` branch still
+    counts, so an id that was staged there is not given out again.
     """
     names: list[str] = []
     seen: set[str] = set()
-    for branch in ('main', 'submissions'):
+    for branch in ('main', 'eval', 'submissions'):
         for name in remote_folders(cwd, branch):
             if name not in seen:
                 seen.add(name)

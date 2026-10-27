@@ -4,7 +4,8 @@ The workflow checks out this script from the tip of main and points it
 at the pull request's files. A submission cannot replace the checker.
 The file list comes from the pull request API. Each
 ``submissions/<tool>/`` directory is passed to ``validate_submission.review``.
-The id is assigned later, as the first step of evaluation on ``main``.
+The id is assigned later, on the ``eval`` branch. Merge ``eval`` back
+into ``main`` by hand.
 A fork is merged like any other pull request.
 
     PR_NUMBER=4 PR_DIR=/tmp/pr GITHUB_REPOSITORY=owner/name \\
@@ -168,10 +169,11 @@ def ensure_faulty_branch(cwd: Path) -> None:
 def publish_faulty(base_dir: Path, pr_dir: Path, tools: list[str], number: int) -> list[str]:
     """Copy the failed folders onto ``faulty-submissions``.
 
-    The branch is where an unevaluated submission lives. Evaluation only
-    runs on ``main``, so a folder that failed the format check is written
-    here under the same ``submissions/<tool>/`` name. A later failure of
-    the same folder replaces the copy.
+    The branch is where an unevaluated submission lives. Evaluation runs
+    on the ``eval`` branch after a folder has landed on ``main``, so a
+    folder that failed the format check is written here under the same
+    ``submissions/<tool>/`` name. A later failure of the same folder
+    replaces the copy.
     """
     present = [
         name for name in tools
@@ -245,7 +247,8 @@ def comment_on_pr() -> None:
     if ok and tools:
         id_note = (
             '\n\nMerge this pull request into `main`. '
-            'Evaluation assigns the id.'
+            'Evaluation assigns the id on the `eval` branch. '
+            'Merge `eval` back into `main` by hand.'
         )
         if base and base != MAIN_BRANCH:
             try:

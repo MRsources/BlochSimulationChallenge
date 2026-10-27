@@ -1,10 +1,11 @@
-# Runs after a push to main changes submissions/. The job continues when
-# a changed path sits in a submission folder. Its first action gives an
-# id to a folder that arrived without one. It then runs the evaluation
-# scripts: the submission README and the image grids.
-# The commit pushes the renamed folders, evaluation/, and those READMEs.
-# A generated submissions/<id>/README.md does not start this workflow
-# again, and neither does the commit this job itself pushes.
+# Runs after a push to main changes submissions/. The job brings the
+# eval branch up to date with that push, then runs on eval. Its first
+# action gives an id to a folder that arrived without one. It then runs
+# the evaluation scripts: the submission README and the image grids.
+# The commit stays on eval. Merge eval back into main by hand.
+# A merge of eval into main updates eval to that same tip and does not
+# run the scripts again. A generated submissions/<id>/README.md does not
+# start this workflow.
 name: Update submission evaluation
 
 on:
@@ -30,7 +31,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
-          fetch-depth: 2
+          fetch-depth: 0
       - name: Require a change inside a submission folder
         id: gate
         env:
@@ -53,23 +54,48 @@ jobs:
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
           fi
-      - uses: actions/setup-python@v5
+      - name: Update eval from main
+        id: sync
         if: steps.gate.outputs.run == 'true'
+        run: |
+          git fetch origin main
+          if git fetch origin eval 2>fetch_err; then
+            if git merge-base --is-ancestor origin/eval origin/main; then
+              git push origin origin/main:refs/heads/eval
+              echo "eval already merged into main; branch moved to that tip"
+              echo "run=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            git checkout -B eval origin/eval
+            git -c user.name='github-actions[bot]' \
+                -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+                merge --no-edit origin/main
+          else
+            if grep -Eq "couldn't find remote ref|not found" fetch_err; then
+              git checkout -B eval origin/main
+            else
+              cat fetch_err
+              exit 1
+            fi
+          fi
+          echo "run=true" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-python@v5
+        if: steps.sync.outputs.run == 'true'
         with:
           python-version: '3.12'
       - name: Install evaluation dependencies
-        if: steps.gate.outputs.run == 'true'
+        if: steps.sync.outputs.run == 'true'
         run: python -m pip install numpy h5py matplotlib pypulseq==1.5.0.post1 'mri-nufft[finufft]==1.5.1'
       - name: Assign an id to a folder that has none
-        if: steps.gate.outputs.run == 'true'
+        if: steps.sync.outputs.run == 'true'
         run: python .github/scripts/assign_submission_ids.py
       - name: Rebuild plots
-        if: steps.gate.outputs.run == 'true'
+        if: steps.sync.outputs.run == 'true'
         run: |
           python evaluation/eval_scripts/write_submission_readmes.py
           python evaluation/eval_scripts/plot_submission_images.py
-      - name: Commit evaluation
-        if: steps.gate.outputs.run == 'true'
+      - name: Commit evaluation on eval
+        if: steps.sync.outputs.run == 'true'
         run: |
           git add evaluation
           git add -A -- submissions
@@ -80,4 +106,4 @@ jobs:
           git -c user.name='github-actions[bot]' \
               -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
               commit -m "Update submission evaluation"
-          git push
+          git push origin HEAD:refs/heads/eval

@@ -503,7 +503,8 @@ def comment_on_review() -> None:
         'Format check passed.\n\n'
         f'{report}\n\n'
         f'Pull request: {url}\n\n'
-        'Merge it into `main`. Evaluation assigns the id.',
+        'Merge it into `main`. Evaluation assigns the id on the `eval` branch. '
+        'Merge `eval` back into `main` by hand.',
     )
     print(report, flush=True)
     raise SystemExit(0 if ok else 1)

@@ -8,9 +8,9 @@ The branch starts at the tip of ``main``. The folder is
 ``submissions/<tool>/``, with no id yet. ``<tool>`` is the issue title
 with the word ``submission`` removed. Push ``bot/issue-<number>`` and
 open a pull request into ``main``. That pull request is not checked
-again. An organiser merges it by hand. Evaluation assigns the id and
-runs once on that push to ``main``. Editing the issue after a pass
-updates the same branch and the same pull request.
+again. An organiser merges it by hand. Evaluation assigns the id on
+the ``eval`` branch. Merge ``eval`` back into ``main`` by hand. Editing the
+issue after a pass updates the same branch and the same pull request.
 
     ISSUE_NUMBER=12 GITHUB_REPOSITORY=owner/name GITHUB_TOKEN=... \\
         python .github/scripts/open_submission_pr.py
@@ -130,7 +130,8 @@ def ensure_pr(repo: str, number: int, head: str, folder: str, token: str) -> str
             '--body', (
                 f'Files from https://github.com/{repo}/issues/{number}, '
                 f'copied to `submissions/{folder}/` on `bot/issue-{number}`. '
-                'Merge this pull request into `main`. Evaluation assigns the id.\n'
+                'Merge this pull request into `main`. Evaluation assigns the id '
+                'on the `eval` branch. Merge `eval` back into `main` by hand.\n'
             ),
         ],
         cwd=REPO_ROOT, text=True, capture_output=True, env=env,
@@ -218,7 +219,8 @@ def open_pr() -> None:
     post_comment(
         repo, number, token,
         f'Format check passed. Pull request: {url}\n\n'
-        f'Merge it into `main`. Evaluation assigns the id.\n\n{report}',
+        'Merge it into `main`. Evaluation assigns the id on the `eval` branch. '
+        f'Merge `eval` back into `main` by hand.\n\n{report}',
     )
     print(url, flush=True)
 

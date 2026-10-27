@@ -3,12 +3,14 @@
 # request cannot replace them, and a later run picks up a checker that
 # landed on main after the pull request opened. A passing pull request
 # is merged into main as it stands, including one from a fork. Evaluation
-# assigns the id. A failed check copies the unevaluated folder onto
+# assigns the id on the eval branch. Merge eval back into main by hand.
+# A failed check copies the unevaluated folder onto
 # faulty-submissions and closes the pull request. A corrected submission
 # is a new pull request.
 # bot/issue-* is a validated issue. Those files were already checked, so
 # this job does not check that pull request again. The owner merges it
-# into main, and evaluation runs on that push.
+# into main. Evaluation assigns the id on the eval branch. Merge eval
+# back into main by hand.
 name: Check submission pull request
 
 on:

@@ -4,7 +4,8 @@
 # main after the issue was opened.
 # A passing check pushes bot/issue-<number> and opens a pull request
 # into main. That pull request is not checked again. The owner merges
-# it by hand. Evaluation assigns the id and runs once on that push.
+# it by hand. Evaluation assigns the id on the eval branch. Merge eval
+# back into main by hand.
 
 name: Comment on submission issue
 
