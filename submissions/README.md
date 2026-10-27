@@ -3,13 +3,13 @@
 One entry is one folder, the five ADC files, and a completed copy of [submission.json](../submission.json).
 
 ```
-submissions/<tool>/
+submissions/NNN_<tool>/
     case0.h5   case1.h5   case2.h5   case3.h5   case4.h5
     submission.json
     simulate.py     optional run script; any name and file type
 ```
 
-`<tool>` is a short name for the simulator. Put the group in that name when two teams might use the same simulator (`submissions/KomaMRI-Freiburg/`). When one team submits more than one configuration, put the simulation flavour in the name as well (`submissions/MR-zero-isochromat/`).
+The folder name starts with the id: three digits, then an underscore, then a short name for the simulator. Look at the folders already in `submissions/` and take the next number. Put the group in the name when two teams might use the same simulator (`NNN_KomaMRI-Freiburg`). When one team submits more than one configuration, put the simulation flavour in the name as well (`NNN_MR-zero-isochromat`).
 
 Each `caseN.h5` is the raw complex ADC vector in acquisition order. Either layout is accepted:
 
@@ -35,7 +35,7 @@ with h5py.File('case0.h5', 'w') as handle:
 - `project_page` of your simulation is optional.
 - `paper` is optional. A link on its own is enough, either as a string or as the `link` field of an object. `title`, `authors`, and `year` can be left empty.
 - `hardware` is optional.
-- `runtime_s` and `mrzero_runtime_s` are optional, in seconds. Leave them null when the run was not timed. If you record timings, run [simulation_mr0.py](003_MR-zero/simulation_mr0.py) on the same machine and put that wall-clock in `mrzero_runtime_s`. Evaluation divides the two.
+- `runtime_s` and `mrzero_runtime_s` are optional, in seconds. Leave them null when the run was not timed. If you record timings, run [simulation_mr0.py](001_MR-zero/simulation_mr0.py) on the same machine and put that wall-clock in `mrzero_runtime_s`. Evaluation divides the two.
 - `solver` and `setup_notes` are optional.
 
 After the entry is on `main`, evaluation writes `README.md` into the submission folder from this JSON.
@@ -44,33 +44,11 @@ A run script is optional. Any file name and type is accepted (`simulate.py`, `ru
 
 # How to submit
 
-There is two ways to submit. A pull request that targets `main` is the straightforward approach. Alternatively one can submit through this gits issue space. After the files are on `main`, evaluation assigns an id to a folder that does not have one and rebuilds the comparison.
+A pull request that targets `main` is how to submit. After the files are on `main`, evaluation rebuilds the comparison and commits it on `main`.
 
 
 ## Pull request
 
-Open a pull request against `main`. Put the folder from [What to submit](#what-to-submit) in the pull request as files, not as a zip. Change only `submissions/<tool>/`. Leave every other file in this repository untouched.
+Open a pull request against `main`. Put the folder from [What to submit](#what-to-submit) in the pull request as files, not as a zip. Change only `submissions/NNN_<tool>/`. Leave every other file in this repository untouched.
 
-The format check runs when the pull request changes anything under `submissions/`. Merge it into `main`. A pull request from a fork is merged the same way. Evaluation assigns the id.
-
-## Issue
-
-Open a GitHub issue on this repository. You need an account; you do not need to clone the repo or set up git.
-
-**Issue title.** Include the word `submission` and the name of the tool. The form to use is:
-
-```text
-submission: <tool>
-```
-
-`<tool>` is the same folder name as in [What to submit](#what-to-submit). Put the group in the tool name when two teams might use the same simulator (`submission: KomaMRI-Freiburg`). When one team submits more than one configuration, put the simulation flavour in the name as well (`submission: MR-zero-isochromat`).
-
-**Issue body.** GitHub issues do not accept `.h5` uploads. Pack the same files into one `.zip` or `.tgz`, or gzip each file (`case0.h5.gz` … `case4.h5.gz`, `submission.json.gz`, and the run script when you include one), and drag that archive into the issue. The link has to be a GitHub `user-attachments` link, not a link to another site.
-
-```sh
-zip submission.zip case0.h5 case1.h5 case2.h5 case3.h5 case4.h5 submission.json
-# optional: add the run script, under any name and file type
-# or: tar -czf submission.tgz case0.h5 case1.h5 case2.h5 case3.h5 case4.h5 submission.json
-```
-
-A comment on the issue reports whether the unpacked files pass the format check. When they pass, the files are put on `bot/issue-<number>` and a pull request targets `main`. The owner merges that pull request. Evaluation assigns the id and runs on that merge. 
+The format check runs when the pull request changes anything under `submissions/`. Merge it into `main`. A pull request from a fork is merged the same way. Evaluation rebuilds the comparison and commits it on `main`. 
