@@ -6,8 +6,34 @@
   "tool_date": "",
   "solver": "",
   "project_page": "https://github.com/MRsources/MRzero-Core",
-  "paper": "",
+  "paper": "https://arxiv.org/pdf/2606.15164",
   "hardware": "Intel Core i9-10940X",
-  "cases": [],
+  "cases": [
+    {
+      "case": 0,
+      "runtime_s": null,
+      "mrzero_runtime_s": null
+    },
+    {
+      "case": 1,
+      "runtime_s": null,
+      "mrzero_runtime_s": null
+    },
+    {
+      "case": 2,
+      "runtime_s": null,
+      "mrzero_runtime_s": null
+    },
+    {
+      "case": 3,
+      "runtime_s": null,
+      "mrzero_runtime_s": null
+    },
+    {
+      "case": 4,
+      "runtime_s": null,
+      "mrzero_runtime_s": null
+    }
+  ],
   "setup_notes": ""
 }
