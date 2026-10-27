@@ -8,8 +8,9 @@ locations in [-0.5, 0.5); they are divided by the matrix size over FOV.
 The sign is flipped so ``adj_op`` matches ``fft2`` on a Cartesian grid.
 
 A ``.npy`` may be any real or complex floating dtype. An HDF5 file carries
-float ``signal_real`` and ``signal_imag`` of any floating dtype. Both are
-cast to complex128 for the NUFFT.
+either a complex ``signal`` dataset or float ``signal_real`` and
+``signal_imag``. A complex dataset is split into real and imag. Both paths
+are cast to complex128 for the NUFFT.
 
 Run::
 
@@ -48,12 +49,25 @@ def load_signal(path: Path) -> np.ndarray:
     if suffix in {'.h5', '.hdf5'}:
         import h5py
         with h5py.File(path, 'r') as handle:
-            if 'signal_real' not in handle or 'signal_imag' not in handle:
+            if 'signal_real' in handle or 'signal_imag' in handle:
+                if 'signal_real' not in handle or 'signal_imag' not in handle:
+                    raise SystemExit(
+                        f'{path.name} needs datasets signal_real and signal_imag'
+                    )
+                real = np.asarray(handle['signal_real'][()])
+                imag = np.asarray(handle['signal_imag'][()])
+            elif 'signal' in handle:
+                signal = np.asarray(handle['signal'][()])
+                if not np.issubdtype(signal.dtype, np.complexfloating):
+                    raise SystemExit(
+                        f'{path.name} signal dtype {signal.dtype} is not complex'
+                    )
+                real, imag = signal.real, signal.imag
+            else:
                 raise SystemExit(
-                    f'{path.name} needs datasets signal_real and signal_imag'
+                    f'{path.name} needs a complex dataset signal, '
+                    'or signal_real and signal_imag'
                 )
-            real = np.asarray(handle['signal_real'][()])
-            imag = np.asarray(handle['signal_imag'][()])
         if real.shape != imag.shape:
             raise SystemExit(f'{path.name}: signal_real and signal_imag shapes differ')
         if not (
