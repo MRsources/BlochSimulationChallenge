@@ -6,7 +6,7 @@
   "tool_date": "",
   "solver": "",
   "project_page": "https://github.com/MRsources/MRzero-Core",
-  "paper": "",
+  "paper": "https://arxiv.org/pdf/2606.15164",
   "hardware": "Intel Core i9-10940X",
   "cases": [],
   "setup_notes": ""
