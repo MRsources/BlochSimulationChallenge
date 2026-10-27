@@ -1,6 +1,6 @@
 """Write each submission README from its submission.json.
 
-Folder ids are assigned by the pull-request check. This step only renders
+Folder ids are part of the folder name. This step only renders
 the sheet into ``README.md`` beside that JSON file.
 
 Run::

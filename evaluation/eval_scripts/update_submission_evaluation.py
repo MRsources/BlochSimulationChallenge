@@ -3,8 +3,12 @@
 Two steps, each also runnable on its own:
 
 - ``write_submission_readmes.py`` renders ``README.md`` from ``submission.json``.
-  Folder ids are assigned earlier, by the pull-request check.
-- ``plot_submission_images.py`` writes one figure per case.
+  The id is already part of the folder name.
+- ``plot_submission_images.py`` writes one figure per case and refreshes the figure links in the repository README.
+
+Install::
+
+    python -m pip install numpy h5py matplotlib pypulseq==1.5.0.post1 'mri-nufft[finufft]==1.5.1'
 
 Run::
 

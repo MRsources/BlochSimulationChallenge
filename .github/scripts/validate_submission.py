@@ -11,7 +11,7 @@ a submission folder is generated later and is not part of the entry. Any other
 file is an optional run script: the name and the file type are not fixed, and
 the file is not run.
 
-    python .github/scripts/validate_submission.py submissions/issue-1
+    python .github/scripts/validate_submission.py submissions/NNN_tool
     python .github/scripts/validate_submission.py case0.h5 case1.h5
 """
 
@@ -32,7 +32,7 @@ CASE_NAME = re.compile(r'case([0-4])\.(h5|hdf5)$', re.IGNORECASE)
 
 
 def kept_name(name: str) -> bool:
-    """A file the issue unpacker may keep.
+    """A file the format check may keep.
 
     Case files, ``submission.json``, and any other run script. The script name
     and suffix are free. Hidden names are left out.

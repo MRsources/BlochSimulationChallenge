@@ -36,11 +36,10 @@ def next_number(names: list[str]) -> int:
 
 
 def assign_folder(tool: str, existing: list[str], previous: list[str]) -> str:
-    """Folder for an issue accept.
+    """Folder name that keeps a number this submission already used.
 
-    ``previous`` is the folders this same issue already wrote. The first
-    accept takes the next id. A later accept keeps that number unless some
-    other submission already published it.
+    The first call takes the next id. A later call keeps that number unless
+    some other submission already published it.
     """
     if not TOOL.fullmatch(tool):
         raise ValueError(f'{tool} is not a usable tool name')
@@ -76,8 +75,7 @@ def plan_new_ids(folders: list[Path], reserved: list[str]) -> list[tuple[str, st
 
     ``reserved`` counts numbers already published on ``main`` or on the
     ``submissions`` branch, so those ids are not given out again. A folder
-    that already has an id is left as it is. The open ``bot/issue-<number>``
-    branch has no id yet, so it does not reserve a number.
+    that already has an id is left as it is.
     """
     names = [folder.name for folder in folders]
     pending = [
@@ -133,7 +131,7 @@ def rename_plan(
 
 def open_pull_folders(repo: str, token: str, skip: int | None = None) -> list[str]:
     """Folder names under ``submissions/`` on open pull requests, except ``skip``."""
-    from comment_on_issue import github_json
+    from comment_on_pr import github_json
 
     found: list[str] = []
     seen: set[str] = set()
@@ -199,9 +197,9 @@ def remote_folders(cwd: Path, branch: str = 'submissions') -> list[str]:
 def id_sources(cwd: Path) -> list[str]:
     """Folders already published on ``main`` or staged on ``submissions``.
 
-    Pull requests and issue submissions land on ``main``. A leftover
-    ``submissions`` branch still counts, so an id that was staged there
-    is not given out again.
+    Pull requests land on ``main`` with the id already in the folder name.
+    A leftover ``submissions`` branch still counts, so an id that was
+    staged there is not given out again.
     """
     names: list[str] = []
     seen: set[str] = set()

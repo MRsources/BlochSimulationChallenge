@@ -15,7 +15,9 @@ Run::
 from __future__ import annotations
 
 import argparse
+import re
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import matplotlib
@@ -43,12 +45,18 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from submission_cases import (  # noqa: E402
     CASES,
     OUT,
+    REPO,
     SEQUENCES,
     SUBMISSIONS,
     case_dir,
     collect_case,
     header,
     list_submissions,
+)
+
+_FIGURE = re.compile(
+    r'(evaluation/case[0-4]_[A-Za-z0-9_]+/case[0-4]_[A-Za-z0-9_]+\.png)'
+    r'(?:\?v=[^"\s]*)?'
 )
 
 CMAP = 'gray'
@@ -229,6 +237,26 @@ def plot_submission_images(folders: list[Path], out: Path, sequences: Path) -> N
             plot_case_grid(stem, names, signals, images, folder / f'{stem}.png')
         elif names:
             _plot_signal_trace(stem, names, signals, seq_path, folder / f'{stem}.png')
+    if out.resolve() == OUT.resolve():
+        refresh_readme_figures(REPO / 'README.md')
+
+
+def refresh_readme_figures(readme: Path, stamp: str | None = None) -> None:
+    """Change the figure query in the repository README.
+
+    GitHub caches a README image by its URL. The plot path stays the same,
+    so the query has to change before the new PNG is shown.
+    """
+    if not readme.is_file():
+        raise SystemExit(f'{readme} is missing')
+    token = stamp or datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')
+    text = readme.read_text()
+    updated, count = _FIGURE.subn(rf'\1?v={token}', text)
+    if count == 0:
+        raise SystemExit(f'{readme} has no evaluation figures to refresh')
+    if updated != text:
+        readme.write_text(updated)
+    print(f'updated {readme} ({count} figures, v={token})')
 
 
 def main() -> None:

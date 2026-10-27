@@ -1,9 +1,8 @@
-"""Give submission folders on main the next free id.
+"""Kept for reference. The evaluation workflow does not run this.
 
-Evaluation runs this before the plots. A folder that already has an id is
-left alone. The number is one past the highest id on main or on the
-submissions branch, not on an open bot/issue branch. A queued run merges ids that an earlier run already
-pushed, so two merges do not take the same number.
+The id is part of the folder name when the submission is written.
+``NNN_<tool>`` is the next number after the highest folder already in
+``submissions/``. Plotting uses that name as it stands.
 """
 
 from __future__ import annotations
@@ -24,34 +23,11 @@ def _git(*args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
-def take_ids_already_on_main() -> None:
-    """Merge ``origin/main`` so a queued run sees ids already pushed."""
-    fetched = _git('fetch', 'origin', 'main')
-    if fetched.returncode != 0:
-        err = (fetched.stderr or fetched.stdout or '').strip()
-        raise SystemExit(err or 'could not fetch main')
-    merged = subprocess.run(
-        [
-            'git',
-            '-c', 'user.name=github-actions[bot]',
-            '-c', 'user.email=41898282+github-actions[bot]@users.noreply.github.com',
-            'merge', '--no-edit', 'origin/main',
-        ],
-        cwd=ROOT, text=True, capture_output=True,
-    )
-    if merged.returncode != 0:
-        err = (merged.stderr or merged.stdout or '').strip()
-        raise SystemExit(err or 'could not include ids already committed on main')
-    if merged.stdout.strip():
-        print(merged.stdout, end='' if merged.stdout.endswith('\n') else '\n')
-
-
 def assign() -> None:
-    take_ids_already_on_main()
     try:
         reserved = id_sources(ROOT)
     except RuntimeError as exc:
-        print(f'could not read the submissions branch: {exc}', flush=True)
+        print(f'could not read a branch used for ids: {exc}', flush=True)
         reserved = []
     plan = plan_new_ids(submission_dirs(ROOT), reserved)
     if not plan:

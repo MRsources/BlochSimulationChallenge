@@ -4,7 +4,8 @@ The workflow checks out this script from the tip of main and points it
 at the pull request's files. A submission cannot replace the checker.
 The file list comes from the pull request API. Each
 ``submissions/<tool>/`` directory is passed to ``validate_submission.review``.
-The id is assigned later, as the first step of evaluation on ``main``.
+The folder name already carries the id. Evaluation commits the
+comparison on ``main``.
 A fork is merged like any other pull request.
 
     PR_NUMBER=4 PR_DIR=/tmp/pr GITHUB_REPOSITORY=owner/name \\
@@ -13,16 +14,17 @@ A fork is merged like any other pull request.
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import shutil
 import subprocess
 import sys
 import urllib.error
+import urllib.request
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from comment_on_issue import github_json, post_comment  # noqa: E402
 from validate_submission import review  # noqa: E402
 
 REPO_NAME = re.compile(r'^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$')
@@ -30,6 +32,33 @@ TOOL_NAME = re.compile(r'^[A-Za-z0-9._-]+$')
 ALLOWED_ROOT_FILES = {'README.md'}
 MAIN_BRANCH = 'main'
 FAULTY_BRANCH = 'faulty-submissions'
+
+
+def github_json(method: str, url: str, token: str, payload: dict | None = None) -> dict:
+    data = None if payload is None else json.dumps(payload).encode()
+    request = urllib.request.Request(
+        url,
+        data=data,
+        method=method,
+        headers={
+            'Authorization': f'Bearer {token}',
+            'Accept': 'application/vnd.github+json',
+            'X-GitHub-Api-Version': '2022-11-28',
+            'User-Agent': 'bloch-sim-challenge',
+        },
+    )
+    with urllib.request.urlopen(request, timeout=30) as response:
+        return json.load(response)
+
+
+def post_comment(repo: str, number: int, token: str, body: str) -> None:
+    """Comment on the pull request. GitHub stores that comment on the issue."""
+    github_json(
+        'POST',
+        f'https://api.github.com/repos/{repo}/issues/{number}/comments',
+        token,
+        {'body': body},
+    )
 
 
 def pull_filenames(repo: str, number: int, token: str) -> list[str]:
@@ -168,10 +197,11 @@ def ensure_faulty_branch(cwd: Path) -> None:
 def publish_faulty(base_dir: Path, pr_dir: Path, tools: list[str], number: int) -> list[str]:
     """Copy the failed folders onto ``faulty-submissions``.
 
-    The branch is where an unevaluated submission lives. Evaluation only
-    runs on ``main``, so a folder that failed the format check is written
-    here under the same ``submissions/<tool>/`` name. A later failure of
-    the same folder replaces the copy.
+    The branch is where an unevaluated submission lives. Evaluation runs
+    on ``main`` after a folder has landed there, so a folder that failed
+    the format check is written here under the same
+    ``submissions/<tool>/`` name. A later failure of the same folder
+    replaces the copy.
     """
     present = [
         name for name in tools
@@ -245,7 +275,7 @@ def comment_on_pr() -> None:
     if ok and tools:
         id_note = (
             '\n\nMerge this pull request into `main`. '
-            'Evaluation assigns the id.'
+            'Evaluation rebuilds the comparison and commits it on `main`.'
         )
         if base and base != MAIN_BRANCH:
             try:
